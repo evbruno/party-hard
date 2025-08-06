@@ -35,7 +35,12 @@ if config_env() == :prod do
 
   # deploying to Render.com
   # host = System.get_env("PHX_HOST") || "example.com"
-  host = System.get_env("RENDER_EXTERNAL_HOSTNAME") || "localhost"
+  host =
+    System.get_env("PHX_HOST") ||
+      System.get_env("RENDER_EXTERNAL_HOSTNAME") ||
+      System.get_env("APP_NAME") ||
+      "localhost"
+
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :party_hard, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
