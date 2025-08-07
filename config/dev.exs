@@ -9,11 +9,11 @@ import Config
 config :party_hard, PartyHardWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || "4000")],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "rdUV3jCbUBY0dUtzzPAqXdxN5mN47Rar2fhmz+0DmO6lQVEo9LRLnYG+evkoJqqj",
+  secret_key_base: "n06ux+OgzSXxK5oKl1Q3rgicmHWSei5yEeNInuU9AmnV6z2iKqa+na5pvVKj6nbF",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:party_hard, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:party_hard, ~w(--watch)]}
@@ -45,10 +45,11 @@ config :party_hard, PartyHardWeb.Endpoint,
 # Watch static and templates for browser reloading.
 config :party_hard, PartyHardWeb.Endpoint,
   live_reload: [
+    web_console_logger: true,
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/party_hard_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/party_hard_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$"
     ]
   ]
 
@@ -56,7 +57,7 @@ config :party_hard, PartyHardWeb.Endpoint,
 config :party_hard, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+config :logger, :default_formatter, format: "[$level] $message\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
@@ -66,7 +67,9 @@ config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
 
 config :phoenix_live_view,
-  # Include HEEx debug annotations as HTML comments in rendered markup
+  # Include debug annotations and locations in rendered markup.
+  # Changing this configuration will require mix clean and a full recompile.
   debug_heex_annotations: true,
+  debug_attributes: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true

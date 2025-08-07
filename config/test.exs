@@ -4,7 +4,7 @@ import Config
 # you can enable the server option below.
 config :party_hard, PartyHardWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "NPbeLLHExNcQb/drhwOC/0ccdBEZiPF5z3lGbWhrC6QBz6u1e18D96JiKXTXARLK",
+  secret_key_base: "SlqQ4b5Lce0NZtjPuSuLcx64P8zP5XrgJ5BEHuu42nVffYwuihk+zhRgbX0yewAd",
   server: false
 
 # Print only warnings and errors during test
