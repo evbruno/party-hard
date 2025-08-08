@@ -1,28 +1,8 @@
-defmodule PartyHard.EchoServer.Message do
-  defstruct id: -1, date: "", content: "", sender: "", broadcast: false
-
-  def now(sender, content, delta \\ 0) do
-    %__MODULE__{
-      id: System.unique_integer([:monotonic, :positive]),
-      date: NaiveDateTime.utc_now() |> NaiveDateTime.add(delta),
-      content: content,
-      sender: sender
-    }
-  end
-end
-
-defmodule PartyHard.EchoServer.History do
-  defstruct user: nil, messages: []
-
-  def prepend(state, new_msg) do
-    %__MODULE__{
-      state
-      | messages: [new_msg | state.messages]
-    }
-  end
-end
-
 defmodule PartyHard.EchoServer do
+  @moduledoc """
+  Echo server implementation.  Handles message echoing and history tracking for users.
+  """
+
   use GenServer
   require Logger
   alias PartyHard.EchoServer.History
@@ -30,13 +10,16 @@ defmodule PartyHard.EchoServer do
 
   # ---  public apis ---
 
-  # @spec load_history(user :: String.t()) :: History.t()
+  @spec load_history(user :: String.t()) :: History.t()
   def load_history(user),
     do: lookup_or_spawn(user) |> GenServer.call(:load_history)
 
+  @spec echo_message(user :: String.t(), message :: String.t(), delay :: non_neg_integer()) ::
+          Message.t()
   def echo_message(user, message, delay \\ 0),
     do: lookup_or_spawn(user) |> GenServer.call({:echo, user, message, delay})
 
+  @spec start_link(user :: String.t()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(user) do
     GenServer.start_link(__MODULE__, user, name: via_tuple(user))
   end
@@ -48,17 +31,6 @@ defmodule PartyHard.EchoServer do
     Logger.info("#{__MODULE__}: init #{user}")
     {:ok, %History{user: user}}
   end
-
-  # @impl true
-  # def handle_call(:inc, _from, {user, count} = b) do
-  #   IO.puts("handle_call :inc  =? #{inspect(b)}")
-  #   {:reply, count, {user, count + 1}}
-  # end
-
-  # @impl true
-  # def handle_call(:get, _from, {_user, count} = state) do
-  #   {:reply, count, state}
-  # end
 
   @impl true
   def handle_call(:load_history, _from, %History{} = state) do
