@@ -8,6 +8,7 @@ defmodule PartyHardWeb.Router do
     plug :put_root_layout, html: {PartyHardWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug :put_user_token
   end
 
   pipeline :api do
@@ -18,6 +19,7 @@ defmodule PartyHardWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/chat", LiveChat.Index
   end
 
   # Other scopes may use custom stacks.
@@ -39,5 +41,19 @@ defmodule PartyHardWeb.Router do
 
       live_dashboard "/dashboard", metrics: PartyHardWeb.Telemetry
     end
+  end
+
+  # extra stuff
+  # FIXME: add a nice docker-like random names
+  defp put_user_token(conn, _) do
+    current_user =
+      case get_session(conn, :current_user) do
+        nil -> "user-#{:rand.uniform(999)}-#{:rand.uniform(999)}"
+        u -> u
+      end
+
+    conn
+    |> assign(:current_user, current_user)
+    |> put_session(:current_user, current_user)
   end
 end
