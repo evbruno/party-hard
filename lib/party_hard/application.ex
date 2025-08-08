@@ -13,6 +13,8 @@ defmodule PartyHard.Application do
       {Phoenix.PubSub, name: PartyHard.PubSub},
       # Start a worker by calling: PartyHard.Worker.start_link(arg)
       # {PartyHard.Worker, arg},
+      {Registry, keys: :unique, name: PartyHard.EchoServerRegistry},
+      {DynamicSupervisor, name: PartyHard.EchoServerSupervisor, strategy: :one_for_one},
       # Start to serve requests, typically the last entry
       PartyHardWeb.Endpoint
     ]

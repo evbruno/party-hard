@@ -21,9 +21,12 @@ defmodule PartyHard.MixProject do
   def application do
     [
       mod: {PartyHard.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: extra_applications(Mix.env())
     ]
   end
+
+  defp extra_applications(:dev), do: [:logger, :runtime_tools, :observer, :wx]
+  defp extra_applications(_), do: [:logger, :runtime_tools]
 
   def cli do
     [
@@ -61,7 +64,8 @@ defmodule PartyHard.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:tidewave, "~> 0.2", only: :dev}
+      {:tidewave, "~> 0.2", only: :dev},
+      {:mnemonic_slugs, "~> 0.0.3"}
     ]
   end
 
