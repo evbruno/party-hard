@@ -21,7 +21,6 @@ defmodule PartyHardWeb.Router do
     get "/", PageController, :home
     live "/chat", LiveChat.Index
     get "/chat/off", PageController, :signoff
-
   end
 
   # Other scopes may use custom stacks.
@@ -50,7 +49,7 @@ defmodule PartyHardWeb.Router do
   defp put_user_token(conn, _) do
     current_user =
       case get_session(conn, :current_user) do
-        nil -> MnemonicSlugs.generate_slug(:rand.uniform(2) + :rand.uniform(2))
+        nil -> MnemonicSlugs.generate_slug(1 + :rand.uniform(2))
         u -> u
       end
 
