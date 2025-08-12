@@ -17,20 +17,22 @@
       field={@form[:delay]}
       type="range"
       min="0"
-      max="3000"
-      step="250"
+      max="5000"
+      step="500"
       label="Echo Delay"
     />
     <footer class="text-xs mt-2 mb-3 label mb-1">
       (millis) {@form.params["delay"]}
     </footer>
+    <.input
+      type="checkbox"
+      field={@form[:broadcast?]}
+      label="Broadcast ?"
+    />
     <footer class="flex justify-end gap-4">
       <.button phx-disable-with="Sending..." variant="primary">
         Send message
         <.icon name="hero-paper-airplane-micro" class="size-4 opacity-75 hover:opacity-100" />
-      </.button>
-      <.button type="button" phx-click="broadcast">
-        Broadcast <.icon name="hero-globe-alt" class="size-4 opacity-75 hover:opacity-100" />
       </.button>
       <.button type="button" phx-click="signout">
         Signout
@@ -66,7 +68,14 @@
       class="flex flex-col p-4 rounded-box bg-base-200 shadow-md"
     >
       <div class="text-xs font-light">{message.date}</div>
-      <div class="font-bold">{message.sender}</div>
+      <div class="font-bold">
+        <.icon
+          :if={message.broadcast?}
+          name="hero-globe-alt"
+          class="size-4 opacity-75 hover:opacity-100"
+        />
+        {message.sender}
+      </div>
       <div class="font-mono">{message.content}</div>
     </div>
   </div>

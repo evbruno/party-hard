@@ -4,12 +4,19 @@ defmodule PartyHardWeb.LiveChat.Index do
 
   alias PartyHard.EchoServer.Message, as: ChatMessage
   alias PartyHard.EchoServer
+  alias Phoenix.PubSub
 
-  @initial_data %{"message" => nil, "delay" => 1000}
+  @initial_data %{"message" => nil, "delay" => 3000, "broadcast?" => false}
+
+  @lobby_topic "chat:lobby"
 
   @impl true
   def mount(_params, %{"current_user" => cu} = session, socket) do
     Logger.info("Mount with session #{inspect(session)}")
+
+    if connected?(socket) do
+      PubSub.subscribe(PartyHard.PubSub, @lobby_topic)
+    end
 
     {:ok,
      socket
@@ -29,23 +36,19 @@ defmodule PartyHardWeb.LiveChat.Index do
   @impl true
   def handle_event("send", params, socket) do
     delay = parse_delay(params["delay"])
-    msg = EchoServer.echo_message(socket.assigns.current_user, params["message"], delay)
+    broadcast? = parse_broadcast?(params["broadcast?"])
 
-    {
-      :noreply,
-      socket
-      |> assign(:form, to_form(%{"message" => "", "delay" => delay}))
-      |> put_flash(:info, "Message sent")
-      |> prepend_message(msg)
-    }
-  end
-
-  @impl true
-  def handle_event("broadcast", _params, socket) do
     {:noreply,
-     socket
-     |> put_flash(:error, "FIXME: not impl. yet 🤦🏻‍♂️")}
+     send_message(broadcast?, delay, params["message"], socket)
+     |> assign(:form, to_form(%{"message" => "", "delay" => delay}))}
   end
+
+  # @impl true
+  # def handle_event("broadcast", _params, socket) do
+  #   {:noreply,
+  #    socket
+  #    |> put_flash(:error, "FIXME: not impl. yet 🤦🏻‍♂️")}
+  # end
 
   @impl true
   def handle_event(
@@ -67,19 +70,14 @@ defmodule PartyHardWeb.LiveChat.Index do
     {:noreply, redirect(socket, to: ~p"/chat/off")}
   end
 
-  defp parse_delay(delay) do
-    case Integer.parse(delay) do
-      :error ->
-        Logger.warning("Error parsing delay from #{inspect(delay)}")
-        0
-
-      {n, _} ->
-        n
-    end
+  @impl true
+  def handle_info({:echo_reply, %ChatMessage{} = new_msg} = _payload, socket) do
+    {:noreply, prepend_message(socket, new_msg)}
   end
 
   @impl true
-  def handle_info({:echo_reply, %ChatMessage{} = new_msg} = _payload, socket) do
+  def handle_info({:broadcast, %ChatMessage{} = new_msg} = _payload, socket) do
+    EchoServer.add_to_history(socket.assigns.current_user, new_msg)
     {:noreply, prepend_message(socket, new_msg)}
   end
 
@@ -107,5 +105,39 @@ defmodule PartyHardWeb.LiveChat.Index do
     history = EchoServer.load_history(current_user)
 
     %{history: history.messages}
+  end
+
+  defp parse_delay(delay) do
+    case Integer.parse(delay) do
+      :error ->
+        Logger.warning("Error parsing delay from #{inspect(delay)}")
+        0
+
+      {n, _} ->
+        n
+    end
+  end
+
+  defp parse_broadcast?("true"), do: true
+  defp parse_broadcast?(_), do: false
+
+  defp send_message(broadcast?, delay, message, socket)
+
+  defp send_message(false, delay, message, socket) do
+    msg = EchoServer.echo_message(socket.assigns.current_user, message, delay)
+
+    socket
+    |> put_flash(:info, "Message sent")
+    |> prepend_message(msg)
+  end
+
+  defp send_message(true, _delay, message, socket) do
+    msg = EchoServer.broadcast_message(socket.assigns.current_user, message)
+
+    PubSub.broadcast_from(PartyHard.PubSub, self(), @lobby_topic, {:broadcast, msg})
+
+    socket
+    |> put_flash(:info, "Broadcast sent")
+    |> prepend_message(msg)
   end
 end

@@ -7,17 +7,18 @@ defmodule PartyHard.EchoServer.Message do
           date: NaiveDateTime.t(),
           content: String.t(),
           sender: String.t(),
-          broadcast: boolean()
+          broadcast?: boolean()
         }
-  defstruct id: -1, date: "", content: "", sender: "", broadcast: false
+  defstruct id: -1, date: "", content: "", sender: "", broadcast?: false
 
-  @spec now(sender :: String.t(), content :: String.t(), delta :: integer()) :: t()
-  def now(sender, content, delta \\ 0) do
+  @spec now(sender :: String.t(), content :: String.t(), broadcast? :: boolean()) :: t()
+  def now(sender, content, broadcast? \\ false) do
     %__MODULE__{
       id: System.unique_integer([:monotonic, :positive]),
-      date: NaiveDateTime.utc_now() |> NaiveDateTime.add(delta),
+      date: NaiveDateTime.utc_now(),
       content: content,
-      sender: sender
+      sender: sender,
+      broadcast?: broadcast?
     }
   end
 end

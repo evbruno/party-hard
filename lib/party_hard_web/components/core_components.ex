@@ -258,7 +258,7 @@ defmodule PartyHardWeb.CoreComponents do
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
             @class ||
-              "w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700",
+              "w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer h-3 dark:bg-gray-700",
             @errors != [] && (@error_class || "input-error")
           ]}
           {@rest}

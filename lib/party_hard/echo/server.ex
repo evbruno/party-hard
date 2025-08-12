@@ -9,6 +9,12 @@ defmodule PartyHard.EchoServer do
   alias PartyHard.EchoServer.Message
 
   # ---  public apis ---
+  #
+
+  @spec broadcast_message(sender :: String.t(), msg :: String.t()) ::
+          {:ok, Message.t()}
+  def broadcast_message(user, msg),
+    do: lookup_or_spawn(user) |> GenServer.call({:local, user, msg})
 
   @spec load_history(user :: String.t()) :: History.t()
   def load_history(user),
@@ -18,6 +24,10 @@ defmodule PartyHard.EchoServer do
           Message.t()
   def echo_message(user, message, delay \\ 0),
     do: lookup_or_spawn(user) |> GenServer.call({:echo, user, message, delay})
+
+  @spec add_to_history(user :: String.t(), msg :: Message.t()) :: History.t()
+  def add_to_history(user, msg),
+    do: lookup_or_spawn(user) |> GenServer.call({:add_to_history, msg})
 
   @spec start_link(user :: String.t()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(user) do
@@ -33,15 +43,28 @@ defmodule PartyHard.EchoServer do
   end
 
   @impl true
-  def handle_call(:load_history, _from, %History{} = state) do
-    IO.puts("handle_call load_history => #{inspect(state)}")
+  def handle_call({:add_to_history, new_msg}, _from, %History{} = state) do
+    state = History.prepend(state, new_msg)
+
     {:reply, state, state}
   end
 
   @impl true
-  def handle_call({:echo, sender, msg, delay} = params, {from_pid, _}, %History{} = state) do
-    IO.puts("handle_cast echo => #{inspect(params)} => #{inspect(state)}")
-    new_msg = Message.now(sender, msg)
+  def handle_call(:load_history, _from, %History{} = state) do
+    {:reply, state, state}
+  end
+
+  @impl true
+  def handle_call({:local, sender, msg}, _, %History{} = state) do
+    new_msg = Message.now(sender, msg, true)
+    state = History.prepend(state, new_msg)
+
+    {:reply, new_msg, state}
+  end
+
+  @impl true
+  def handle_call({:echo, sender, msg, delay} = _params, {from_pid, _}, %History{} = state) do
+    new_msg = Message.now(sender, msg, false)
     state = History.prepend(state, new_msg)
 
     Process.send_after(self(), {:echo_proc, from_pid, new_msg}, delay)
@@ -51,9 +74,6 @@ defmodule PartyHard.EchoServer do
 
   @impl true
   def handle_info({:echo_proc, from_pid, %Message{} = msg}, state) do
-    IO.puts("handle_info echo_proc from_pid => #{is_pid(from_pid)}? #{inspect(from_pid)}")
-    IO.puts("handle_info echo_proc msg => #{inspect(msg)}")
-
     new_msg = Message.now("server.echo", "[e] #{msg.content}")
     state = History.prepend(state, new_msg)
 
